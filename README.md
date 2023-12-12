@@ -3,8 +3,8 @@
 cic (pronounced "sick" or "kick" as you prefer) is an experimental colouring in
 creator.
 
-The aim will be to take a picture -- whether a drawing, a poster, or a
-screenshot from a TV show -- and turn it into a colouring in sheet for my son.
+The aim will be to take a picture – whether a drawing, a poster, or a screenshot
+from a TV show – and turn it into a colouring in sheet for my son.
 
 ## Motivation
 
