@@ -16,6 +16,7 @@ import (
 	"image/color"
 	"image/draw"
 	"image/jpeg"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"log"
 	"math"
 	"os"
@@ -323,41 +324,41 @@ func (ig *ImageGradients) BasicThresholdSuppression() *ImageGradients {
 	return ig
 }
 
-func (ig *ImageGradients) FollowEdge(x, y, upper, lower int) {
+func (ig *ImageGradients) FollowEdge(x, y, upper, lower int, accEdges sets.Set[image.Point]) {
 	maxX := len(ig.Value[0])
 	maxY := len(ig.Value)
 
-	if x-1 >= 0 && ig.Value[y][x-1] >= lower && ig.Value[y][x-1] < upper {
-		ig.Value[y][x-1] = 255
-		ig.FollowEdge(x-1, y, upper, lower)
+	if x-1 >= 0 && ig.Value[y][x-1] >= lower && ig.Value[y][x-1] < upper && !accEdges.Has(image.Point{x - 1, y}) {
+		accEdges.Insert(image.Point{x - 1, y})
+		ig.FollowEdge(x-1, y, upper, lower, accEdges)
 	}
-	if x-1 >= 0 && y-1 >= 0 && ig.Value[y-1][x-1] >= lower && ig.Value[y-1][x-1] < upper {
-		ig.Value[y-1][x-1] = 255
-		ig.FollowEdge(x-1, y-1, upper, lower)
+	if x-1 >= 0 && y-1 >= 0 && ig.Value[y-1][x-1] >= lower && ig.Value[y-1][x-1] < upper && !accEdges.Has(image.Point{x - 1, y - 1}) {
+		accEdges.Insert(image.Point{x - 1, y - 1})
+		ig.FollowEdge(x-1, y-1, upper, lower, accEdges)
 	}
-	if y-1 >= 0 && ig.Value[y-1][x] >= lower && ig.Value[y-1][x] < upper {
-		ig.Value[y-1][x] = 255
-		ig.FollowEdge(x, y-1, upper, lower)
+	if y-1 >= 0 && ig.Value[y-1][x] >= lower && ig.Value[y-1][x] < upper && !accEdges.Has(image.Point{x, y - 1}) {
+		accEdges.Insert(image.Point{x, y - 1})
+		ig.FollowEdge(x, y-1, upper, lower, accEdges)
 	}
-	if x+1 < maxX && y-1 >= 0 && ig.Value[y-1][x+1] >= lower && ig.Value[y-1][x+1] < upper {
-		ig.Value[y-1][x+1] = 255
-		ig.FollowEdge(x+1, y-1, upper, lower)
+	if x+1 < maxX && y-1 >= 0 && ig.Value[y-1][x+1] >= lower && ig.Value[y-1][x+1] < upper && !accEdges.Has(image.Point{x + 1, y - 1}) {
+		accEdges.Insert(image.Point{x + 1, y - 1})
+		ig.FollowEdge(x+1, y-1, upper, lower, accEdges)
 	}
-	if x+1 < maxX && ig.Value[y][x+1] >= lower && ig.Value[y][x+1] < upper {
-		ig.Value[y][x+1] = 255
-		ig.FollowEdge(x+1, y, upper, lower)
+	if x+1 < maxX && ig.Value[y][x+1] >= lower && ig.Value[y][x+1] < upper && !accEdges.Has(image.Point{x + 1, y}) {
+		accEdges.Insert(image.Point{x + 1, y})
+		ig.FollowEdge(x+1, y, upper, lower, accEdges)
 	}
-	if x+1 < maxX && y+1 < maxY && ig.Value[y+1][x+1] >= lower && ig.Value[y+1][x+1] < upper {
-		ig.Value[y+1][x+1] = 255
-		ig.FollowEdge(x+1, y+1, upper, lower)
+	if x+1 < maxX && y+1 < maxY && ig.Value[y+1][x+1] >= lower && ig.Value[y+1][x+1] < upper && !accEdges.Has(image.Point{x + 1, y + 1}) {
+		accEdges.Insert(image.Point{x + 1, y + 1})
+		ig.FollowEdge(x+1, y+1, upper, lower, accEdges)
 	}
-	if y+1 < maxY && ig.Value[y+1][x] >= lower && ig.Value[y+1][x] < upper {
-		ig.Value[y+1][x] = 255
-		ig.FollowEdge(x, y+1, upper, lower)
+	if y+1 < maxY && ig.Value[y+1][x] >= lower && ig.Value[y+1][x] < upper && !accEdges.Has(image.Point{x, y + 1}) {
+		accEdges.Insert(image.Point{x, y + 1})
+		ig.FollowEdge(x, y+1, upper, lower, accEdges)
 	}
-	if x-1 >= 0 && y+1 < maxY && ig.Value[y+1][x-1] >= lower && ig.Value[y+1][x-1] < upper {
-		ig.Value[y+1][x-1] = 255
-		ig.FollowEdge(x-1, y+1, upper, lower)
+	if x-1 >= 0 && y+1 < maxY && ig.Value[y+1][x-1] >= lower && ig.Value[y+1][x-1] < upper && !accEdges.Has(image.Point{x - 1, y + 1}) {
+		accEdges.Insert(image.Point{x - 1, y + 1})
+		ig.FollowEdge(x-1, y+1, upper, lower, accEdges)
 	}
 }
 
@@ -382,7 +383,9 @@ func (ig *ImageGradients) LineFollowingThresholdSuppression() *ImageGradients {
 	fmt.Printf("\nMax gradient value is %v, Min value is %v\n", maxVal, minVal)
 
 	upperThreshold := 150
-	lowerThreshold := 8
+	lowerThreshold := 20
+
+	acceptedEdges := make(sets.Set[image.Point])
 
 	fmt.Printf("Upper threshold is %v, lower threshold is %v\n", upperThreshold,
 		lowerThreshold)
@@ -390,18 +393,21 @@ func (ig *ImageGradients) LineFollowingThresholdSuppression() *ImageGradients {
 	for j := 0; j < y; j++ {
 		for i := 0; i < x; i++ {
 			if ig.Value[j][i] >= upperThreshold {
-				ig.Value[j][i] = 255
-				ig.FollowEdge(i, j, upperThreshold, lowerThreshold)
-			} else if ig.Value[j][i] < lowerThreshold {
-				ig.Value[j][i] = 0
+				acceptedEdges.Insert(image.Point{i, j})
+				ig.FollowEdge(i, j, upperThreshold, lowerThreshold, acceptedEdges)
 			}
 		}
 	}
 
+	intensityScaleFactor := 255.0 / float64(maxVal)
+	fmt.Printf("Intensity scale factor is %v\n", intensityScaleFactor)
+
 	for j := 0; j < y; j++ {
 		for i := 0; i < x; i++ {
-			if ig.Value[j][i] < upperThreshold {
+			if !acceptedEdges.Has(image.Point{i, j}) {
 				ig.Value[j][i] = 0
+			} else {
+				ig.Value[j][i] = int(float64(ig.Value[j][i]) * intensityScaleFactor) * 3 / 4 + 64
 			}
 		}
 	}
@@ -505,7 +511,7 @@ func main() {
 
 	fmt.Print("Reading in file...")
 
-	reader, err := os.Open("lighthouse.png")
+	reader, err := os.Open("micawber-bathtime.jpg")
 	if err != nil {
 		log.Fatal(err)
 	}
