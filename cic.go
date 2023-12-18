@@ -1,3 +1,13 @@
+// Next steps:
+// 1. Tidy up code.
+// 2. Store size in ImageGradients datastructure so don't need to compute
+//    repeatedly
+// 3. Make parameters selectable (thresholds, Guassian blur size & sigma,
+//    whether or not to use Gaussian blur),
+// 4. Make CLI interface
+// 5. Make a GUI/web interface to allow fast experimentation with parameter
+//    tuning
+
 package main
 
 import (
@@ -9,6 +19,8 @@ import (
 	"log"
 	"math"
 	"os"
+
+	_ "image/png"
 )
 
 func RgbToGray(c color.RGBA) color.Gray {
@@ -127,19 +139,19 @@ func CreateSobelKernel(dir string) *SobelKernel {
 	return &sk
 }
 
-type GradientValuesMatrix [][]int
+// type GradientValuesMatrix [][]int
 
-func CreateGradientValuesMatrix(x, y int) GradientValuesMatrix {
-	var gvm GradientValuesMatrix
+// func CreateGradientValuesMatrix(x, y int) GradientValuesMatrix {
+// 	var gvm GradientValuesMatrix
 
-	gvm = make([][]int, y)
+// 	gvm = make([][]int, y)
 
-	for j := 0; j < y; j++ {
-		gvm[j] = make([]int, x)
-	}
+// 	for j := 0; j < y; j++ {
+// 		gvm[j] = make([]int, x)
+// 	}
 
-	return gvm
-}
+// 	return gvm
+// }
 
 type GradientDirection uint8
 
@@ -190,6 +202,213 @@ func CreateImageGradients(x, y int) *ImageGradients {
 	return &ig
 }
 
+func PixelNonmaxSuppression(ig *ImageGradients, x, y int) {
+	var above, below image.Point
+
+	maxX := len(ig.Value[0])
+	maxY := len(ig.Value)
+
+	switch ig.Direction[y][x] {
+	case zero:
+		above.X = x + 1
+		above.Y = y
+		below.X = x - 1
+		below.Y = y
+	case fortyfive:
+		above.X = x + 1
+		above.Y = y + 1
+		below.X = x - 1
+		below.Y = y - 1
+	case ninety:
+		above.X = x
+		above.Y = y + 1
+		below.X = x
+		below.Y = y - 1
+	case onethreefive:
+		above.X = x - 1
+		above.Y = y + 1
+		below.X = x + 1
+		below.Y = y - 1
+	}
+
+	if above.X >= 0 && above.X < maxX && above.Y >= 0 && above.Y < maxY && ig.Value[above.Y][above.X] > ig.Value[y][x] {
+		ig.Value[y][x] = 0
+	} else if below.X >= 0 && below.X < maxX && below.Y >= 0 && below.Y < maxY && ig.Value[below.Y][below.X] > ig.Value[y][x] {
+		ig.Value[y][x] = 0
+	}
+}
+
+func (ig *ImageGradients) NonmaxSuppression() *ImageGradients {
+	x := len(ig.Value[0])
+	y := len(ig.Value)
+
+	for j := 0; j < y; j++ {
+		for i := 0; i < x; i++ {
+			PixelNonmaxSuppression(ig, i, j)
+		}
+	}
+
+	return ig
+}
+
+func (ig *ImageGradients) NeighbourOverThreshold(x, y, thr int) bool {
+	maxX := len(ig.Value[0])
+	maxY := len(ig.Value)
+
+	if x-1 >= 0 && ig.Value[y][x-1] >= thr {
+		return true
+	}
+	if x-1 >= 0 && y-1 >= 0 && ig.Value[y-1][x-1] >= thr {
+		return true
+	}
+	if y-1 >= 0 && ig.Value[y-1][x] >= thr {
+		return true
+	}
+	if x+1 < maxX && y-1 >= 0 && ig.Value[y-1][x+1] >= thr {
+		return true
+	}
+	if x+1 < maxX && ig.Value[y][x+1] >= thr {
+		return true
+	}
+	if x+1 < maxX && y+1 < maxY && ig.Value[y+1][x+1] >= thr {
+		return true
+	}
+	if y+1 < maxY && ig.Value[y+1][x] >= thr {
+		return true
+	}
+	if x-1 >= 0 && y+1 < maxY && ig.Value[y+1][x-1] >= thr {
+		return true
+	}
+	return false
+}
+
+func (ig *ImageGradients) BasicThresholdSuppression() *ImageGradients {
+	x := len(ig.Value[0])
+	y := len(ig.Value)
+
+	maxVal := 0
+	minVal := 2 ^ 8
+
+	for j := 0; j < y; j++ {
+		for i := 0; i < x; i++ {
+			if ig.Value[j][i] > maxVal {
+				maxVal = ig.Value[j][i]
+			}
+			if ig.Value[j][i] < minVal {
+				minVal = ig.Value[j][i]
+			}
+		}
+	}
+
+	fmt.Printf("\nMax gradient value is %v, Min value is %v\n", maxVal, minVal)
+
+	upperThreshold := maxVal * 6 / 10
+	lowerThreshold := maxVal * 2 / 10
+
+	fmt.Printf("Upper threshold is %v, lower threshold is %v\n", upperThreshold,
+		lowerThreshold)
+
+	for j := 0; j < y; j++ {
+		for i := 0; i < x; i++ {
+			if ig.Value[j][i] >= upperThreshold {
+				ig.Value[j][i] = 255
+			} else if ig.Value[j][i] >= lowerThreshold && ig.NeighbourOverThreshold(i, j, upperThreshold) {
+				ig.Value[j][i] = 255
+			} else {
+				ig.Value[j][i] = 0
+			}
+		}
+	}
+
+	return ig
+}
+
+func (ig *ImageGradients) FollowEdge(x, y, upper, lower int) {
+	maxX := len(ig.Value[0])
+	maxY := len(ig.Value)
+
+	if x-1 >= 0 && ig.Value[y][x-1] >= lower && ig.Value[y][x-1] < upper {
+		ig.Value[y][x-1] = 255
+		ig.FollowEdge(x-1, y, upper, lower)
+	}
+	if x-1 >= 0 && y-1 >= 0 && ig.Value[y-1][x-1] >= lower && ig.Value[y-1][x-1] < upper {
+		ig.Value[y-1][x-1] = 255
+		ig.FollowEdge(x-1, y-1, upper, lower)
+	}
+	if y-1 >= 0 && ig.Value[y-1][x] >= lower && ig.Value[y-1][x] < upper {
+		ig.Value[y-1][x] = 255
+		ig.FollowEdge(x, y-1, upper, lower)
+	}
+	if x+1 < maxX && y-1 >= 0 && ig.Value[y-1][x+1] >= lower && ig.Value[y-1][x+1] < upper {
+		ig.Value[y-1][x+1] = 255
+		ig.FollowEdge(x+1, y-1, upper, lower)
+	}
+	if x+1 < maxX && ig.Value[y][x+1] >= lower && ig.Value[y][x+1] < upper {
+		ig.Value[y][x+1] = 255
+		ig.FollowEdge(x+1, y, upper, lower)
+	}
+	if x+1 < maxX && y+1 < maxY && ig.Value[y+1][x+1] >= lower && ig.Value[y+1][x+1] < upper {
+		ig.Value[y+1][x+1] = 255
+		ig.FollowEdge(x+1, y+1, upper, lower)
+	}
+	if y+1 < maxY && ig.Value[y+1][x] >= lower && ig.Value[y+1][x] < upper {
+		ig.Value[y+1][x] = 255
+		ig.FollowEdge(x, y+1, upper, lower)
+	}
+	if x-1 >= 0 && y+1 < maxY && ig.Value[y+1][x-1] >= lower && ig.Value[y+1][x-1] < upper {
+		ig.Value[y+1][x-1] = 255
+		ig.FollowEdge(x-1, y+1, upper, lower)
+	}
+}
+
+func (ig *ImageGradients) LineFollowingThresholdSuppression() *ImageGradients {
+	x := len(ig.Value[0])
+	y := len(ig.Value)
+
+	maxVal := 0
+	minVal := 2 ^ 8
+
+	for j := 0; j < y; j++ {
+		for i := 0; i < x; i++ {
+			if ig.Value[j][i] > maxVal {
+				maxVal = ig.Value[j][i]
+			}
+			if ig.Value[j][i] < minVal {
+				minVal = ig.Value[j][i]
+			}
+		}
+	}
+
+	fmt.Printf("\nMax gradient value is %v, Min value is %v\n", maxVal, minVal)
+
+	upperThreshold := 150
+	lowerThreshold := 8
+
+	fmt.Printf("Upper threshold is %v, lower threshold is %v\n", upperThreshold,
+		lowerThreshold)
+
+	for j := 0; j < y; j++ {
+		for i := 0; i < x; i++ {
+			if ig.Value[j][i] >= upperThreshold {
+				ig.Value[j][i] = 255
+				ig.FollowEdge(i, j, upperThreshold, lowerThreshold)
+			} else if ig.Value[j][i] < lowerThreshold {
+				ig.Value[j][i] = 0
+			}
+		}
+	}
+
+	for j := 0; j < y; j++ {
+		for i := 0; i < x; i++ {
+			if ig.Value[j][i] < upperThreshold {
+				ig.Value[j][i] = 0
+			}
+		}
+	}
+
+	return ig
+}
+
 func (ig *ImageGradients) GrayscaleImage() *image.Gray {
 	x := len(ig.Value[0])
 	y := len(ig.Value)
@@ -206,7 +425,7 @@ func (ig *ImageGradients) GrayscaleImage() *image.Gray {
 }
 
 func InvertGrayscaleImage(img *image.Gray) *image.Gray {
-    bounds := img.Bounds()
+	bounds := img.Bounds()
 
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
@@ -228,6 +447,8 @@ func SobelFilter(img *image.Gray) *ImageGradients {
 	ig := CreateImageGradients(imgSize.X, imgSize.Y)
 
 	var gxval, gyval, imgval int
+
+	var gradientHistogram [17]int
 
 	for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y++ {
 		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
@@ -260,7 +481,20 @@ func SobelFilter(img *image.Gray) *ImageGradients {
 
 			ig.Value[y][x] = int(math.Sqrt(float64(gxval*gxval) + float64(gyval*gyval)))
 			ig.Direction[y][x] = CalcGradientDirection(gxval, gyval)
+
+			if ig.Value[y][x] == 0 {
+				gradientHistogram[16]++
+			} else {
+				gradientHistogram[ig.Value[y][x]>>6]++
+			}
 		}
+	}
+
+	fmt.Print("\nGradient values:\n")
+	fmt.Printf("%-12s   %-8s\n", "Gradient val", "Count")
+	fmt.Printf("        %04d   %8d\n", 0, gradientHistogram[16])
+	for i, h := range gradientHistogram[0:16] {
+		fmt.Printf("   %04d-%04d   %8d\n", i<<6, (i+1)<<6-1, h)
 	}
 
 	return ig
@@ -271,7 +505,7 @@ func main() {
 
 	fmt.Print("Reading in file...")
 
-	reader, err := os.Open("micawber-bathtime.jpg")
+	reader, err := os.Open("lighthouse.png")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -295,6 +529,13 @@ func main() {
 	fmt.Print("Applying Sobel filter...")
 	ig := SobelFilter(grayImg)
 	fmt.Print(" Done\n")
+	fmt.Print("Applying non-max suppression...")
+	ig = ig.NonmaxSuppression()
+	fmt.Print(" Done\n")
+	fmt.Print("Applying threshold suppression...")
+	// ig = ig.BasicThresholdSuppression()
+	ig = ig.LineFollowingThresholdSuppression()
+	fmt.Print(" Done\n")
 	fmt.Print("Converting edge gradients to grayscale image...")
 	grayImg = ig.GrayscaleImage()
 	fmt.Print(" Done\n")
@@ -310,7 +551,7 @@ func main() {
 	defer outputFile.Close()
 
 	var imgOptions jpeg.Options
-	imgOptions.Quality = 75
+	imgOptions.Quality = 100
 
 	jpeg.Encode(outputFile, grayImg, &imgOptions)
 	fmt.Print(" Done\n")
