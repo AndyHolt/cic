@@ -1,6 +1,6 @@
 // Next steps:
-// 1. Tidy up code.
-// 2. Store size in ImageGradients datastructure so don't need to compute
+// 1. DONE Tidy up code.
+// 2. DONE Store size in ImageGradients datastructure so don't need to compute
 //    repeatedly
 // 3. Make parameters selectable (thresholds, Guassian blur size & sigma,
 //    whether or not to use Gaussian blur),
@@ -173,10 +173,14 @@ func CalcGradientDirection(x, y int) GradientDirection {
 type ImageGradients struct {
 	Value     [][]int
 	Direction [][]GradientDirection
+	X         int
+	Y         int
 }
 
 func CreateImageGradients(x, y int) *ImageGradients {
 	var ig ImageGradients
+
+	ig.X, ig.Y = x, y
 
 	ig.Value = make([][]int, y)
 	ig.Direction = make([][]GradientDirection, y)
@@ -191,9 +195,6 @@ func CreateImageGradients(x, y int) *ImageGradients {
 
 func PixelNonmaxSuppression(ig *ImageGradients, x, y int) {
 	var above, below image.Point
-
-	maxX := len(ig.Value[0])
-	maxY := len(ig.Value)
 
 	switch ig.Direction[y][x] {
 	case zero:
@@ -218,19 +219,16 @@ func PixelNonmaxSuppression(ig *ImageGradients, x, y int) {
 		below.Y = y - 1
 	}
 
-	if above.X >= 0 && above.X < maxX && above.Y >= 0 && above.Y < maxY && ig.Value[above.Y][above.X] > ig.Value[y][x] {
+	if above.X >= 0 && above.X < ig.X && above.Y >= 0 && above.Y < ig.Y && ig.Value[above.Y][above.X] > ig.Value[y][x] {
 		ig.Value[y][x] = 0
-	} else if below.X >= 0 && below.X < maxX && below.Y >= 0 && below.Y < maxY && ig.Value[below.Y][below.X] > ig.Value[y][x] {
+	} else if below.X >= 0 && below.X < ig.X && below.Y >= 0 && below.Y < ig.Y && ig.Value[below.Y][below.X] > ig.Value[y][x] {
 		ig.Value[y][x] = 0
 	}
 }
 
 func (ig *ImageGradients) NonmaxSuppression() *ImageGradients {
-	x := len(ig.Value[0])
-	y := len(ig.Value)
-
-	for j := 0; j < y; j++ {
-		for i := 0; i < x; i++ {
+	for j := 0; j < ig.Y; j++ {
+		for i := 0; i < ig.X; i++ {
 			PixelNonmaxSuppression(ig, i, j)
 		}
 	}
@@ -239,9 +237,6 @@ func (ig *ImageGradients) NonmaxSuppression() *ImageGradients {
 }
 
 func (ig *ImageGradients) NeighbourOverThreshold(x, y, thr int) bool {
-	maxX := len(ig.Value[0])
-	maxY := len(ig.Value)
-
 	if x-1 >= 0 && ig.Value[y][x-1] >= thr {
 		return true
 	}
@@ -251,33 +246,30 @@ func (ig *ImageGradients) NeighbourOverThreshold(x, y, thr int) bool {
 	if y-1 >= 0 && ig.Value[y-1][x] >= thr {
 		return true
 	}
-	if x+1 < maxX && y-1 >= 0 && ig.Value[y-1][x+1] >= thr {
+	if x+1 < ig.X && y-1 >= 0 && ig.Value[y-1][x+1] >= thr {
 		return true
 	}
-	if x+1 < maxX && ig.Value[y][x+1] >= thr {
+	if x+1 < ig.X && ig.Value[y][x+1] >= thr {
 		return true
 	}
-	if x+1 < maxX && y+1 < maxY && ig.Value[y+1][x+1] >= thr {
+	if x+1 < ig.X && y+1 < ig.Y && ig.Value[y+1][x+1] >= thr {
 		return true
 	}
-	if y+1 < maxY && ig.Value[y+1][x] >= thr {
+	if y+1 < ig.Y && ig.Value[y+1][x] >= thr {
 		return true
 	}
-	if x-1 >= 0 && y+1 < maxY && ig.Value[y+1][x-1] >= thr {
+	if x-1 >= 0 && y+1 < ig.Y && ig.Value[y+1][x-1] >= thr {
 		return true
 	}
 	return false
 }
 
 func (ig *ImageGradients) BasicThresholdSuppression() *ImageGradients {
-	x := len(ig.Value[0])
-	y := len(ig.Value)
-
 	maxVal := 0
 	minVal := 2 ^ 8
 
-	for j := 0; j < y; j++ {
-		for i := 0; i < x; i++ {
+	for j := 0; j < ig.Y; j++ {
+		for i := 0; i < ig.X; i++ {
 			if ig.Value[j][i] > maxVal {
 				maxVal = ig.Value[j][i]
 			}
@@ -295,8 +287,8 @@ func (ig *ImageGradients) BasicThresholdSuppression() *ImageGradients {
 	fmt.Printf("Upper threshold is %v, lower threshold is %v\n", upperThreshold,
 		lowerThreshold)
 
-	for j := 0; j < y; j++ {
-		for i := 0; i < x; i++ {
+	for j := 0; j < ig.Y; j++ {
+		for i := 0; i < ig.X; i++ {
 			if ig.Value[j][i] >= upperThreshold {
 				ig.Value[j][i] = 255
 			} else if ig.Value[j][i] >= lowerThreshold && ig.NeighbourOverThreshold(i, j, upperThreshold) {
@@ -311,9 +303,6 @@ func (ig *ImageGradients) BasicThresholdSuppression() *ImageGradients {
 }
 
 func (ig *ImageGradients) FollowEdge(x, y, upper, lower int, accEdges sets.Set[image.Point]) {
-	maxX := len(ig.Value[0])
-	maxY := len(ig.Value)
-
 	if x-1 >= 0 && ig.Value[y][x-1] >= lower && ig.Value[y][x-1] < upper && !accEdges.Has(image.Point{x - 1, y}) {
 		accEdges.Insert(image.Point{x - 1, y})
 		ig.FollowEdge(x-1, y, upper, lower, accEdges)
@@ -326,37 +315,34 @@ func (ig *ImageGradients) FollowEdge(x, y, upper, lower int, accEdges sets.Set[i
 		accEdges.Insert(image.Point{x, y - 1})
 		ig.FollowEdge(x, y-1, upper, lower, accEdges)
 	}
-	if x+1 < maxX && y-1 >= 0 && ig.Value[y-1][x+1] >= lower && ig.Value[y-1][x+1] < upper && !accEdges.Has(image.Point{x + 1, y - 1}) {
+	if x+1 < ig.X && y-1 >= 0 && ig.Value[y-1][x+1] >= lower && ig.Value[y-1][x+1] < upper && !accEdges.Has(image.Point{x + 1, y - 1}) {
 		accEdges.Insert(image.Point{x + 1, y - 1})
 		ig.FollowEdge(x+1, y-1, upper, lower, accEdges)
 	}
-	if x+1 < maxX && ig.Value[y][x+1] >= lower && ig.Value[y][x+1] < upper && !accEdges.Has(image.Point{x + 1, y}) {
+	if x+1 < ig.X && ig.Value[y][x+1] >= lower && ig.Value[y][x+1] < upper && !accEdges.Has(image.Point{x + 1, y}) {
 		accEdges.Insert(image.Point{x + 1, y})
 		ig.FollowEdge(x+1, y, upper, lower, accEdges)
 	}
-	if x+1 < maxX && y+1 < maxY && ig.Value[y+1][x+1] >= lower && ig.Value[y+1][x+1] < upper && !accEdges.Has(image.Point{x + 1, y + 1}) {
+	if x+1 < ig.X && y+1 < ig.Y && ig.Value[y+1][x+1] >= lower && ig.Value[y+1][x+1] < upper && !accEdges.Has(image.Point{x + 1, y + 1}) {
 		accEdges.Insert(image.Point{x + 1, y + 1})
 		ig.FollowEdge(x+1, y+1, upper, lower, accEdges)
 	}
-	if y+1 < maxY && ig.Value[y+1][x] >= lower && ig.Value[y+1][x] < upper && !accEdges.Has(image.Point{x, y + 1}) {
+	if y+1 < ig.Y && ig.Value[y+1][x] >= lower && ig.Value[y+1][x] < upper && !accEdges.Has(image.Point{x, y + 1}) {
 		accEdges.Insert(image.Point{x, y + 1})
 		ig.FollowEdge(x, y+1, upper, lower, accEdges)
 	}
-	if x-1 >= 0 && y+1 < maxY && ig.Value[y+1][x-1] >= lower && ig.Value[y+1][x-1] < upper && !accEdges.Has(image.Point{x - 1, y + 1}) {
+	if x-1 >= 0 && y+1 < ig.Y && ig.Value[y+1][x-1] >= lower && ig.Value[y+1][x-1] < upper && !accEdges.Has(image.Point{x - 1, y + 1}) {
 		accEdges.Insert(image.Point{x - 1, y + 1})
 		ig.FollowEdge(x-1, y+1, upper, lower, accEdges)
 	}
 }
 
 func (ig *ImageGradients) LineFollowingThresholdSuppression() *ImageGradients {
-	x := len(ig.Value[0])
-	y := len(ig.Value)
-
 	maxVal := 0
 	minVal := 2 ^ 8
 
-	for j := 0; j < y; j++ {
-		for i := 0; i < x; i++ {
+	for j := 0; j < ig.Y; j++ {
+		for i := 0; i < ig.X; i++ {
 			if ig.Value[j][i] > maxVal {
 				maxVal = ig.Value[j][i]
 			}
@@ -376,8 +362,8 @@ func (ig *ImageGradients) LineFollowingThresholdSuppression() *ImageGradients {
 	fmt.Printf("Upper threshold is %v, lower threshold is %v\n", upperThreshold,
 		lowerThreshold)
 
-	for j := 0; j < y; j++ {
-		for i := 0; i < x; i++ {
+	for j := 0; j < ig.Y; j++ {
+		for i := 0; i < ig.X; i++ {
 			if ig.Value[j][i] >= upperThreshold {
 				acceptedEdges.Insert(image.Point{i, j})
 				ig.FollowEdge(i, j, upperThreshold, lowerThreshold, acceptedEdges)
@@ -388,8 +374,8 @@ func (ig *ImageGradients) LineFollowingThresholdSuppression() *ImageGradients {
 	intensityScaleFactor := 255.0 / float64(maxVal)
 	fmt.Printf("Intensity scale factor is %v\n", intensityScaleFactor)
 
-	for j := 0; j < y; j++ {
-		for i := 0; i < x; i++ {
+	for j := 0; j < ig.Y; j++ {
+		for i := 0; i < ig.X; i++ {
 			if !acceptedEdges.Has(image.Point{i, j}) {
 				ig.Value[j][i] = 0
 			} else {
