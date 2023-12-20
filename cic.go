@@ -140,20 +140,6 @@ func CreateSobelKernel(dir string) *SobelKernel {
 	return &sk
 }
 
-// type GradientValuesMatrix [][]int
-
-// func CreateGradientValuesMatrix(x, y int) GradientValuesMatrix {
-// 	var gvm GradientValuesMatrix
-
-// 	gvm = make([][]int, y)
-
-// 	for j := 0; j < y; j++ {
-// 		gvm[j] = make([]int, x)
-// 	}
-
-// 	return gvm
-// }
-
 type GradientDirection uint8
 
 const (
