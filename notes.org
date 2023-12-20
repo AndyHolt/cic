@@ -1,0 +1,54 @@
+* Process
+- Apply grayscale canny filter, using a basic Gaussian blur, sobel edge
+  detection, and normal approaches to non-maximum suppression and threshold
+  suppression.
+- Quality of output is ok, but not great. Often edges lines are doubled or
+  tripled. Noise and texture gets quite a lot of representation in final output,
+  and edges between colours which are different, but have similar colours, are
+  not found well.
+* Further ideas
+- Consider using the multi-channel colour information to improve edge detection
+  by applying sobel filter to each colour channel independently, and then
+  combining the results in some way (perhaps through normalised sum of squares,
+  or RMS?)
+- Try using alternative edge detection methods, such as Frei-Chan (see
+  [[https://www.rastergrid.com/blog/2011/01/frei-chen-edge-detector/][Frei-Chen]]), Kovalevsky (good for similar-intensity-but-different-colour edges)
+- Use more than one adjacent pixel in non-maximum suppression, in direction of
+  edge, in order to avoid having multiple local maxima giving multiple edges.
+- For threshold suppression, try only comparing pixels along edge direction, to
+  ensure only lines are followed. This may also help reduce double edge effects.
+* Important concepts
+- Discrete Gaussian kernel: It is possible to calculate a proper discrete
+  Gaussian kernel, which maintains the properties of a continuous Gaussian
+  kernel. But it seems that many approaches, and most explanations, simply
+  sample the continuous distribution or substitute a lookup table of values,
+  obtained by some method. E.g. R. Fisher et al in Hypermedia Image Processing
+  Reference ([[https://homepages.inf.ed.ac.uk/rbf/HIPR2/gsmooth.htm][Spatial Filters - Gaussian Smoothing]]) give the results of
+  integrating a Gaussian over each pixel width.
+
+  But other than calling library functions, I have not been able to find a way
+  of actually calculating/generating a discrete Gaussian kernel based on Bessel
+  functions. [[https://en.wikipedia.org/wiki/Scale_space_implementation#The_discrete_Gaussian_kernel][Wikipedia]] describes the function, but does not suggest anything
+  about its implementation, or describe it in a way that gives any obvious
+  approach.
+
+  See some discussion at [[https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/][RasterGrid]] on implementing Guassian blurring.
+
+  For discussion of different implementation approaches, and some advice on
+  choosing kernel size based on Gaussian variance, see
+  [[https://dsp.stackexchange.com/questions/10057/gaussian-blur-standard-deviation-radius-and-kernel-size][Standard
+  Deviation, Radius and Kernel Size - Signal Processing Stack Exchange]].
+
+  In order to implement a Bessel based discrete Gaussian kernel, I used the
+  Modified Bessel Go function in the package =github.com/cpmech/gosl/fun=. While
+  this seems to be an excellent package, it is huge and has several large
+  dependencies which must be installed separately, including ~fftw~ (FFTs), ~LAPACK~
+  (linear algebra package), ~OpenBLAS~ (Basic Linear Algebra Subprograms),
+  ~suite-sparse~ (suite of tools for sparse matrices), and ~MUMPS~ (a sparse matrix
+  solver). None of these are needed for evaluating Bessel functions, but for
+  other components of the GOSL package I am not using. Therefore, it would be
+  extremely useful to extract the Bessel function code from the GOSL package and
+  import it as a standalone and sleek package. (But I need to make sure that
+  this approach works before I optimise it).
+  
+
