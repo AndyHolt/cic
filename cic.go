@@ -423,8 +423,6 @@ func SobelFilter(img *image.Gray) *ImageGradients {
 
 	var gxval, gyval, imgval int
 
-	var gradientHistogram [17]int
-
 	for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y++ {
 		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
 			gxval, gyval = 0, 0
@@ -450,26 +448,11 @@ func SobelFilter(img *image.Gray) *ImageGradients {
 					gyval += imgval * sky.Factors[j+(skx.Size/2)][i+(skx.Size/2)]
 				}
 			}
-			// gx[y][x] = gxval
-			// gy[y][x] = gyval
-			// fmt.Printf("gx, gy = %v, %v", gx[y][x], *gy[y][x])
 
 			ig.Value[y][x] = int(math.Sqrt(float64(gxval*gxval) + float64(gyval*gyval)))
 			ig.Direction[y][x] = CalcGradientDirection(gxval, gyval)
 
-			if ig.Value[y][x] == 0 {
-				gradientHistogram[16]++
-			} else {
-				gradientHistogram[ig.Value[y][x]>>6]++
-			}
 		}
-	}
-
-	fmt.Print("\nGradient values:\n")
-	fmt.Printf("%-12s   %-8s\n", "Gradient val", "Count")
-	fmt.Printf("        %04d   %8d\n", 0, gradientHistogram[16])
-	for i, h := range gradientHistogram[0:16] {
-		fmt.Printf("   %04d-%04d   %8d\n", i<<6, (i+1)<<6-1, h)
 	}
 
 	return ig
