@@ -379,7 +379,7 @@ func (ig *ImageGradients) LineFollowingThresholdSuppression() *ImageGradients {
 			if !acceptedEdges.Has(image.Point{i, j}) {
 				ig.Value[j][i] = 0
 			} else {
-				ig.Value[j][i] = int(float64(ig.Value[j][i]) * intensityScaleFactor) * 3 / 4 + 64
+				ig.Value[j][i] = int(float64(ig.Value[j][i])*intensityScaleFactor)*3/4 + 64
 			}
 		}
 	}
@@ -415,9 +415,6 @@ func InvertGrayscaleImage(img *image.Gray) *image.Gray {
 
 func SobelFilter(img *image.Gray) *ImageGradients {
 	imgSize := img.Bounds().Size()
-
-	// gx := CreateGradientValuesMatrix(imgSize.X, imgSize.Y)
-	// gy := CreateGradientValuesMatrix(imgSize.X, imgSize.Y)
 
 	skx := CreateSobelKernel("X")
 	sky := CreateSobelKernel("Y")
