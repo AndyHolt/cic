@@ -53,63 +53,6 @@ func GrayscaleImage(img image.Image) *image.Gray {
 	return g
 }
 
-type GaussianKernel struct {
-	Size          int
-	InvNormFactor int
-	Factors       [][]int
-}
-
-func CreateGaussianKernel() *GaussianKernel {
-	var gk GaussianKernel
-	gk.Size = 5
-	gk.InvNormFactor = 159
-	gk.Factors = [][]int{
-		[]int{2, 4, 5, 4, 2},
-		[]int{4, 9, 12, 9, 4},
-		[]int{5, 12, 15, 12, 5},
-		[]int{4, 9, 12, 9, 4},
-		[]int{2, 4, 5, 4, 2},
-	}
-
-	return &gk
-}
-
-func GaussianBlur(img *image.Gray) *image.Gray {
-	gk := CreateGaussianKernel()
-
-	bounds := img.Bounds()
-	var pxval int
-
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			pxval = 0
-			for j := -gk.Size / 2; j <= gk.Size/2; j++ {
-				for i := -gk.Size / 2; i <= gk.Size/2; i++ {
-					m := x + i
-					n := y + j
-
-					if m < bounds.Min.X {
-						m = bounds.Min.X
-					} else if m >= bounds.Max.X {
-						m = bounds.Max.X - 1
-					}
-
-					if n < bounds.Min.Y {
-						n = bounds.Min.Y
-					} else if n >= bounds.Max.Y {
-						n = bounds.Max.Y - 1
-					}
-
-					pxval += int(img.GrayAt(m, n).Y) * gk.Factors[j+(gk.Size/2)][i+(gk.Size/2)]
-				}
-			}
-			pxval /= gk.InvNormFactor
-			img.SetGray(x, y, color.Gray{uint8(pxval)})
-		}
-	}
-	return img
-}
-
 type SobelKernel struct {
 	Size      int
 	Direction string
@@ -482,7 +425,7 @@ func main() {
 	grayImg := GrayscaleImage(img)
 	fmt.Print(" Done\n")
 	fmt.Print("Applying Gaussian blur...")
-	grayImg = GaussianBlur(grayImg)
+	grayImg = GaussianBlur(grayImg, 1.0)
 	fmt.Print(" Done\n")
 	fmt.Print("Applying Sobel filter...")
 	ig := SobelFilter(grayImg)
