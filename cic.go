@@ -280,7 +280,7 @@ func (ig *ImageGradients) FollowEdge(x, y, upper, lower int, accEdges sets.Set[i
 	}
 }
 
-func (ig *ImageGradients) LineFollowingThresholdSuppression() *ImageGradients {
+func (ig *ImageGradients) LineFollowingThresholdSuppression(upperThreshold, lowerThreshold int) *ImageGradients {
 	maxVal := 0
 	minVal := 2 ^ 8
 
@@ -297,13 +297,9 @@ func (ig *ImageGradients) LineFollowingThresholdSuppression() *ImageGradients {
 
 	fmt.Printf("\nMax gradient value is %v, Min value is %v\n", maxVal, minVal)
 
-	upperThreshold := 150
-	lowerThreshold := 20
-
 	acceptedEdges := make(sets.Set[image.Point])
 
-	fmt.Printf("Upper threshold is %v, lower threshold is %v\n", upperThreshold,
-		lowerThreshold)
+	fmt.Printf("Upper threshold is %v, lower threshold is %v\n", upperThreshold, lowerThreshold)
 
 	for j := 0; j < ig.Y; j++ {
 		for i := 0; i < ig.X; i++ {
@@ -435,7 +431,7 @@ func main() {
 	fmt.Print(" Done\n")
 	fmt.Print("Applying threshold suppression...")
 	// ig = ig.BasicThresholdSuppression()
-	ig = ig.LineFollowingThresholdSuppression()
+	ig = ig.LineFollowingThresholdSuppression(60, 20)
 	fmt.Print(" Done\n")
 	fmt.Print("Converting edge gradients to grayscale image...")
 	grayImg = ig.GrayscaleImage()
