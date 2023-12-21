@@ -2,7 +2,7 @@
 // 1. DONE Tidy up code.
 // 2. DONE Store size in ImageGradients datastructure so don't need to compute
 //    repeatedly
-// 3. Make parameters selectable (thresholds, Guassian blur size & sigma,
+// 3. DONE Make parameters selectable (thresholds, Guassian blur size & sigma,
 //    whether or not to use Gaussian blur),
 // 4. Make CLI interface
 // 5. Make a GUI/web interface to allow fast experimentation with parameter
@@ -397,12 +397,11 @@ func SobelFilter(img *image.Gray) *ImageGradients {
 	return ig
 }
 
-func main() {
-	fmt.Println("Hello, I'm cic!")
+func ConvertImageToColouring(filename string, sigma float64, upperThreshold,
+	lowerThreshold int) {
+    fmt.Print("Reading in file...")
 
-	fmt.Print("Reading in file...")
-
-	reader, err := os.Open("micawber-bathtime.jpg")
+	reader, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -421,7 +420,7 @@ func main() {
 	grayImg := GrayscaleImage(img)
 	fmt.Print(" Done\n")
 	fmt.Print("Applying Gaussian blur...")
-	grayImg = GaussianBlur(grayImg, 1.0)
+	grayImg = GaussianBlur(grayImg, sigma)
 	fmt.Print(" Done\n")
 	fmt.Print("Applying Sobel filter...")
 	ig := SobelFilter(grayImg)
@@ -431,7 +430,7 @@ func main() {
 	fmt.Print(" Done\n")
 	fmt.Print("Applying threshold suppression...")
 	// ig = ig.BasicThresholdSuppression()
-	ig = ig.LineFollowingThresholdSuppression(60, 20)
+	ig = ig.LineFollowingThresholdSuppression(upperThreshold, lowerThreshold)
 	fmt.Print(" Done\n")
 	fmt.Print("Converting edge gradients to grayscale image...")
 	grayImg = ig.GrayscaleImage()
@@ -441,7 +440,7 @@ func main() {
 	fmt.Print(" Done\n")
 
 	fmt.Print("Saving to output file, \"edited.jpg\"...")
-	outputFile, err := os.Create("edited.jpg")
+	outputFile, err := os.Create("./images/edited.jpg")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -452,4 +451,9 @@ func main() {
 
 	jpeg.Encode(outputFile, grayImg, &imgOptions)
 	fmt.Print(" Done\n")
+}
+
+func main() {
+	fmt.Println("Hello, I'm cic!")
+	ConvertImageToColouring("./images/postmanpathelicopter.jpg", 1.0, 100, 20)
 }
