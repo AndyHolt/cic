@@ -6,6 +6,9 @@
   tripled. Noise and texture gets quite a lot of representation in final output,
   and edges between colours which are different, but have similar colours, are
   not found well.
+- Implemented proper discrete Gaussian filter. Runs a bit faster, allows easier
+  selection of blurring radius. See notes below on the challenges of
+  implementing this.
 * Further ideas
 - Consider using the multi-channel colour information to improve edge detection
   by applying sobel filter to each colour channel independently, and then
