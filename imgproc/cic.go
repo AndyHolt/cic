@@ -8,7 +8,7 @@
 // 5. Make a GUI/web interface to allow fast experimentation with parameter
 //    tuning
 
-package main
+package cic
 
 import (
 	"fmt"
@@ -399,7 +399,7 @@ func SobelFilter(img *image.Gray) *ImageGradients {
 
 func ConvertImageToColouring(filename string, sigma float64, upperThreshold,
 	lowerThreshold int) {
-    fmt.Print("Reading in file...")
+	fmt.Print("Reading in file...")
 
 	reader, err := os.Open(filename)
 	if err != nil {

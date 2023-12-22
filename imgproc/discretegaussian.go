@@ -1,4 +1,4 @@
-package main
+package cic
 
 import (
 	"fmt"
