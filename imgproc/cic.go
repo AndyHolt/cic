@@ -4,7 +4,7 @@
 //    repeatedly
 // 3. DONE Make parameters selectable (thresholds, Guassian blur size & sigma,
 //    whether or not to use Gaussian blur),
-// 4. Make CLI interface
+// 4. DONE Make CLI interface
 // 5. Make a GUI/web interface to allow fast experimentation with parameter
 //    tuning
 

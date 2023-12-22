@@ -48,7 +48,7 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-ms	rootCmd.Flags().Float64VarP(&StdDev, "stddev", "s", 1.0, "Std dev for Gaussian blur")
+	rootCmd.Flags().Float64VarP(&StdDev, "stddev", "s", 1.0, "Std dev for Gaussian blur")
 	rootCmd.Flags().IntVarP(&UpperThreshold, "upper", "u", 100, "Upper threshold for edge suppression")
 	rootCmd.Flags().IntVarP(&LowerThreshold, "lower", "l", 10, "Lower threshold for edge suppression")
 }
