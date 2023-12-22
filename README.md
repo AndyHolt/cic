@@ -1,10 +1,13 @@
 # cic
 
-cic (pronounced *kick*, or *sis*/*sick* if you prefer) is an experimental
+cic (pronounced *kick*, *sis* or *sick* [as you
+prefer](https://en.wikipedia.org/wiki/Hard_and_soft_C)) is an experimental
 colouring-in creator.
 
-Transforms an image – whether a drawing, a poster, or a screenshot from a TV
-show – into a colouring sheet.
+cic transforms an image – whether a drawing, a poster, or a screenshot from a TV
+show – into a colouring sheet. It is a work in process (hence experimental
+above), and though fully functional, it is hoped to refine the quality of output
+for colouring sheets over time.
 
 cic uses a [Canny edge
 detector](https://en.wikipedia.org/wiki/Canny_edge_detector) to perform edge
@@ -16,12 +19,17 @@ to enable use across platforms and by non-commmandline literate users.
 
 ## Motivation
 
-Duck Duck Go only brings up a limited number of free and good colouring in
-pictures of tractors and helicopters, and my son keeps asking for new ones. I'd
-also like to be able to make him colouring in sheets of his favourite characters
-from TV shows he likes. These are for personal use only, with no intent to
-distribute, and no desire to infringe copyright of those making creative and
-educational content for kids.
+Duck Duck Go (other search engines are available and have the same limitations)
+only brings up a limited number of free and good colouring-in pictures of
+tractors, helicopters, and other interesting objects, and my son keeps asking
+for new ones. I'd also like to be able to make him colouring sheets of his
+favourite characters from TV shows he likes. These are for personal use only,
+with no intent to distribute, and no desire to infringe copyright of those
+making creative and educational content for kids.
+
+Of course, an alternative method would be to use generative AI to produce
+colouring sheets of a description provided in a prompt. But that isn't the
+approach of this project.
 
 ## Compilation
 
@@ -72,9 +80,11 @@ smooth fall below the lower threshold and are discarded as noise. Edges which
 are very sharp lie above the upper threshold and are retained. Edges which fall
 between the lower and upper threshold are kept if they are connected to a sharp
 edge above the upper threshold, but discarded if they are not connected to a
-sharp edge. The tuning of the upper and lower thresholds are quite sensitive,
-and the best results vary quite widely from one image to another. If the default
-values do not give good results, trial and error is required to tune these
-values to improve results -- though they are limited in what they can do. Future
-versions of cic will aim to incorporate more methods for retaining important
-edges and discarding noise.
+sharp edge. The tuning of the upper (`-u` or long version `--upper`)and lower
+(`-l` or long version `--lower`) thresholds are quite sensitive, and the best
+results vary quite widely from one image to another. If the default values do
+not give good results, trial and error is required to tune these values to
+improve results -- though they are limited in what they can do.
+
+Future versions of cic will aim to incorporate more methods for retaining
+important edges and discarding noise.
