@@ -73,6 +73,7 @@ func GaussianBlur(img *image.Gray, sigma float64) *image.Gray {
 	dgk := CreateDiscreteGaussianKernel(sigma)
 
 	bounds := img.Bounds()
+	horizBlurImg := image.NewGray(bounds)
 
 	// first pass: along rows
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
@@ -90,7 +91,7 @@ func GaussianBlur(img *image.Gray, sigma float64) *image.Gray {
 				pxval += float64(img.GrayAt(m, y).Y) * dgk.Elements[i+(dgk.Size/2)]
 			}
 			pxval /= dgk.ScalingFactor
-			img.SetGray(x, y, color.Gray{uint8(pxval)})
+			horizBlurImg.SetGray(x, y, color.Gray{uint8(pxval)})
 		}
 	}
 
@@ -107,7 +108,7 @@ func GaussianBlur(img *image.Gray, sigma float64) *image.Gray {
 					n = bounds.Max.Y - 1
 				}
 
-				pxval += float64(img.GrayAt(x, n).Y) * dgk.Elements[j+(dgk.Size/2)]
+				pxval += float64(horizBlurImg.GrayAt(x, n).Y) * dgk.Elements[j+(dgk.Size/2)]
 			}
 			pxval /= dgk.ScalingFactor
 			img.SetGray(x, y, color.Gray{uint8(pxval)})
