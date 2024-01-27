@@ -1,3 +1,15 @@
+#+TITLE: Notes on: Colouring in Creator
+#+AUTHOR: Andy Holt
+#+SETUPFILE: adh-org-notes-export-setup.org
+#+LANGUAGE: en
+#+OPTIONS: num:t toc:t
+#+STARTUP: overview lognoterefile
+#+BIBLIOGRAPHY: /Users/adh/Projects/WritingTools/Theology.bib
+#+BIBLIOGRAPHY: /Users/adh/Projects/WritingTools/Engineering.bib
+#+BIBLIOGRAPHY: /Users/adh/Projects/WritingTools/PopSciHist.bib
+#+BIBLIOGRAPHY: /Users/adh/Projects/WritingTools/Lit.bib
+#+CREATED_DATE: <2024-01-26 Fri 10:02>
+
 * Process
 - Apply grayscale canny filter, using a basic Gaussian blur, sobel edge
   detection, and normal approaches to non-maximum suppression and threshold
@@ -10,16 +22,33 @@
   selection of blurring radius. See notes below on the challenges of
   implementing this.
 * Further ideas
-- Consider using the multi-channel colour information to improve edge detection
+- [X] Consider using the multi-channel colour information to improve edge detection
   by applying sobel filter to each colour channel independently, and then
   combining the results in some way (perhaps through normalised sum of squares,
   or RMS?)
-- Try using alternative edge detection methods, such as Frei-Chan (see
-  [[https://www.rastergrid.com/blog/2011/01/frei-chen-edge-detector/][Frei-Chen]]), Kovalevsky (good for similar-intensity-but-different-colour edges)
-- Use more than one adjacent pixel in non-maximum suppression, in direction of
+- [ ] Try using a clustering algorithm on pixel colours, in order to group similar
+  pixels into large areas of uniform colour. See effects in
+  [cite:@bishop2023deeplearning p. 465]. Collecting pixels into clusters, then
+  setting values according to place in that cluster can give a nice,
+  slightly cartoon-ish, flattened effect. Choosing K-value is important, but low
+  values seem to have quite a nice effect.
+- [ ] Use more than one adjacent pixel in non-maximum suppression, in direction of
   edge, in order to avoid having multiple local maxima giving multiple edges.
-- For threshold suppression, try only comparing pixels along edge direction, to
-  ensure only lines are followed. This may also help reduce double edge effects.
+- [ ] Try using alternative edge detection methods, such as Frei-Chan (see
+  [[https://www.rastergrid.com/blog/2011/01/frei-chen-edge-detector/][Frei-Chen]]), Kovalevsky (good for similar-intensity-but-different-colour edges)
+- [ ] For threshold suppression, try only comparing pixels along edge direction,
+  to ensure only lines are followed. This may also help reduce double edge
+  effects.
+- [ ] Try to find a good heuristic for setting threshold levels
+- [ ] Use threshold levels to paint broader lines, with dark colour, perhaps
+  making lighter lines equally dark but thinner? I.e. where a pixel has major
+  edge, make that a circle of diameter, say, five pixels. We need to first
+  handle the multiple parallel edges with non-maximum suppression. But if we
+  have got clear lines, we can then use them for picking the lines.
+- [ ] Create web app
+  - React frontend?
+  - Will need to find how to serialise image data to send from backend to
+    frontend.
 * Important concepts
 - Discrete Gaussian kernel: It is possible to calculate a proper discrete
   Gaussian kernel, which maintains the properties of a continuous Gaussian
@@ -53,5 +82,72 @@
   extremely useful to extract the Bessel function code from the GOSL package and
   import it as a standalone and sleek package. (But I need to make sure that
   this approach works before I optimise it).
-  
+* Extending Sobel filter to use colour information
+Attempting to apply the Sobel filter in 3 colours. The major disadvantage of
+working with grayscale images is that colours which are similar in overall
+intensity, but quite different in colour (hue) do not give good boundaries. We
+can try to use the colour information to give a better separation between
+different colours of similar intensity. But we need to be careful that the
+contribution of each channel does not cancel out.
 
+When working in grayscale, the Sobel filter gives values \(g_x\) and \(g_y\). We
+then get the edge magnitude with:
+#+NAME: sobel-magnitude
+\begin{equation}
+  G = \sqrt{g_x^2 + g_y^2}
+\end{equation}
+and the direction with:
+#+NAME: sobel-orientation
+\begin{equation}
+  \Theta = \arctan \left( \frac{g_y}{g_x} \right)
+\end{equation}
+
+Now we need to extend this concept to get the magnitude and direction of
+gradients from the colour information of the RGB channels, ensuring that a
+difference in one channel accompanied by an equal and opposite difference in
+another channel does not cancel out. So we need to get some values for \(g_x\)
+and \(g_y\) which represent the combined magnitude of gradient of each colour in
+the \(x\) and \(y\) directions respectively.
+
+From applying the Sobel filter to each gradient, we can get the results:
+#+NAME: vectorgx
+\begin{equation}
+  \mathbf{g}_x =
+  \begin{bmatrix}
+    g^R_x \\
+    g^G_x \\
+    g^B_x
+  \end{bmatrix}
+\end{equation}
+#+NAME: vectorgy
+\begin{equation}
+  \mathbf{g}_y =
+  \begin{bmatrix}
+    g^R_y \\
+    g^G_y \\
+    g^B_y
+  \end{bmatrix}
+\end{equation}
+Two possible methods seem like good candidates for converting these vectors into
+a scalar value, without cancelling out contributions in the different
+dimensions. The first is to take the sum of absolute values, and normalise it:
+#+NAME: sav-x
+\begin{equation}
+  g_x = \frac{|g^R_x| + |g^G_x| + |g^B_x|}{3}
+\end{equation}
+#+NAME: sav-y
+\begin{equation}
+  g_y = \frac{|g^R_y| + |g^G_y| + |g^B_y|}{3}
+\end{equation}
+A second method is to take the sum of squares, normalised:
+#+NAME: sos-x
+\begin{equation}
+  g_x = \frac{1}{9} \sqrt{g^{R2}_x + g^{G2}_x + g^{B2}_x}
+\end{equation}
+#+NAME: sos-y
+\begin{equation}
+  g_y = \frac{1}{9} \sqrt{g^{R2}_y + g^{G2}_y + g^{B2}_y}
+\end{equation}
+We'll try both and see how the result appear.
+
+Results:
