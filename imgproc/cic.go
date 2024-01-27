@@ -397,8 +397,8 @@ func SobelFilter(img *image.Gray) *ImageGradients {
 	return ig
 }
 
-func ConvertImageToColouring(filename string, sigma float64, upperThreshold,
-	lowerThreshold int) {
+func ConvertImageToColouring(filename string, outputFilename string,
+	sigma float64, upperThreshold, lowerThreshold int) {
 	fmt.Print("Reading in file...")
 
 	reader, err := os.Open(filename)
@@ -439,8 +439,8 @@ func ConvertImageToColouring(filename string, sigma float64, upperThreshold,
 	grayImg = InvertGrayscaleImage(grayImg)
 	fmt.Print(" Done\n")
 
-	fmt.Print("Saving to output file, \"edited.jpg\"...")
-	outputFile, err := os.Create("./images/edited.jpg")
+	fmt.Printf("Saving to output file, \"%v\"...", outputFilename)
+	outputFile, err := os.Create(outputFilename)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -455,5 +455,11 @@ func ConvertImageToColouring(filename string, sigma float64, upperThreshold,
 
 func main() {
 	fmt.Println("Hello, I'm cic!")
-	ConvertImageToColouring("./images/postmanpathelicopter.jpg", 1.0, 100, 20)
+	ConvertImageToColouring(
+		"./images/postmanpathelicopter.jpg",
+		"./images/postmanpathelicopter-colouring.jpg",
+		1.0,
+		100,
+		20,
+	)
 }

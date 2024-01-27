@@ -10,9 +10,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var OutputFileName string
 var StdDev float64
 var UpperThreshold int
 var LowerThreshold int
+
 // upper (u) and lower (l) for setting threshold values
 // no-blur option
 
@@ -26,7 +28,7 @@ CIC uses image processing and edge detection techniques to turn any image file
 into a colouring sheet.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		cic.ConvertImageToColouring(args[0], StdDev, UpperThreshold, LowerThreshold)
+		cic.ConvertImageToColouring(args[0], OutputFileName, StdDev, UpperThreshold, LowerThreshold)
 	},
 }
 
@@ -45,10 +47,15 @@ func init() {
 	// will be global for your application.
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cic.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&OutputFileName, "output", "o",
+		"edited.jpg", "File name of output")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().Float64VarP(&StdDev, "stddev", "s", 1.0, "Std dev for Gaussian blur")
-	rootCmd.Flags().IntVarP(&UpperThreshold, "upper", "u", 100, "Upper threshold for edge suppression")
-	rootCmd.Flags().IntVarP(&LowerThreshold, "lower", "l", 10, "Lower threshold for edge suppression")
+	rootCmd.Flags().Float64VarP(&StdDev, "stddev", "s", 1.0,
+		"Std dev for Gaussian blur")
+	rootCmd.Flags().IntVarP(&UpperThreshold, "upper", "u", 100,
+		"Upper threshold for edge suppression")
+	rootCmd.Flags().IntVarP(&LowerThreshold, "lower", "l", 10,
+		"Lower threshold for edge suppression")
 }
