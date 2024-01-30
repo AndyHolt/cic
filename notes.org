@@ -26,12 +26,24 @@
   by applying sobel filter to each colour channel independently, and then
   combining the results in some way (perhaps through normalised sum of squares,
   or RMS?)
-- [ ] Try using a clustering algorithm on pixel colours, in order to group similar
+- [X] Try using a clustering algorithm on pixel colours, in order to group similar
   pixels into large areas of uniform colour. See effects in
   [cite:@bishop2023deeplearning p. 465]. Collecting pixels into clusters, then
   setting values according to place in that cluster can give a nice,
   slightly cartoon-ish, flattened effect. Choosing K-value is important, but low
   values seem to have quite a nice effect.
+- [ ] Open output file after creating
+- [ ] Fine tuning of clustering feature
+  - [ ] Look at dividing cost function by number of pixels
+  - [ ] Convergence and completion
+  - [ ] Initialisation: try setting means in R, G and B channels (i.e. {255, 0,
+    0}, {0, 255, 0} and {0, 0, 255}) if k >= 3, and if k >= 5, try {255, 0, 0},
+    {0, 255, 0}, {0, 0, 255}, {255, 255, 255}, {0, 0, 0}. Any further means
+    beyond 3/5 can be randomly assigned, as already doing.
+  - [ ] Investigate effects and performance, e.g. on a down-sampled image?
+    Effect seems not to be particularly good at full size, image quite noisy.
+  - [ ] How about applying Gaussian filter for smoothing, then k-means? That
+    could work?
 - [ ] Use more than one adjacent pixel in non-maximum suppression, in direction of
   edge, in order to avoid having multiple local maxima giving multiple edges.
 - [ ] Try using alternative edge detection methods, such as Frei-Chan (see
