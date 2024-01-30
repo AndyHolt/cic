@@ -1,6 +1,3 @@
-// [todo] Implement discrete gaussian filter over colour image
-// [todo] Implement canny filter over colour image
-
 package cic
 
 import (
