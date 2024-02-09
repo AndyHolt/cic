@@ -115,7 +115,7 @@ func (kmc *KMeansClusters) AssignClusterMeanValues(img *image.RGBA) *image.RGBA 
 }
 
 func KMeansImage(img *image.RGBA, k int) *image.RGBA {
-	fmt.Print("Running K-means with %v means", k)
+	fmt.Printf("Running K-means with %v means", k)
 
 	kmc := InitKMeans(k)
 
