@@ -136,7 +136,9 @@ func CreateImageGradients(x, y int) *ImageGradients {
 	return &ig
 }
 
-func PixelNonmaxSuppression(ig *ImageGradients, x, y int) {
+// Returns True if a pixel should be retained during non-max suppression, and
+// False if it should be discarded.
+func PixelNonmaxSuppression(ig *ImageGradients, x, y int) bool {
 	var above, below image.Point
 
 	switch ig.Direction[y][x] {
@@ -163,16 +165,30 @@ func PixelNonmaxSuppression(ig *ImageGradients, x, y int) {
 	}
 
 	if above.X >= 0 && above.X < ig.X && above.Y >= 0 && above.Y < ig.Y && ig.Value[above.Y][above.X] > ig.Value[y][x] {
-		ig.Value[y][x] = 0
+		return false
 	} else if below.X >= 0 && below.X < ig.X && below.Y >= 0 && below.Y < ig.Y && ig.Value[below.Y][below.X] > ig.Value[y][x] {
-		ig.Value[y][x] = 0
+		return false
+	} else {
+		return true
 	}
 }
 
 func (ig *ImageGradients) NonmaxSuppression() *ImageGradients {
+	var pixelState [][]bool
+	pixelState = make([][]bool, ig.Y)
+
+	for j := 0; j < ig.Y; j++ {
+		pixelState[j] = make([]bool, ig.X)
+		for i := 0; i < ig.X; i++ {
+			pixelState[j][i] = PixelNonmaxSuppression(ig, i, j)
+		}
+	}
+
 	for j := 0; j < ig.Y; j++ {
 		for i := 0; i < ig.X; i++ {
-			PixelNonmaxSuppression(ig, i, j)
+			if !pixelState[j][i] {
+				ig.Value[j][i] = 0
+			}
 		}
 	}
 
