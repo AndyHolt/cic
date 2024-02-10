@@ -14,6 +14,7 @@ var OutputFileName string
 var StdDev float64
 var UpperThreshold int
 var LowerThreshold int
+var NonMaxSuppressionDistance int
 
 // upper (u) and lower (l) for setting threshold values
 // no-blur option
@@ -28,7 +29,14 @@ CIC uses image processing and edge detection techniques to turn any image file
 into a colouring sheet.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		cic.ConvertImageToColouring(args[0], OutputFileName, StdDev, UpperThreshold, LowerThreshold)
+		cic.ConvertImageToColouring(
+			args[0],
+			OutputFileName,
+			StdDev,
+			UpperThreshold,
+			LowerThreshold,
+			NonMaxSuppressionDistance,
+		)
 	},
 }
 
@@ -58,4 +66,6 @@ func init() {
 		"Upper threshold for edge suppression")
 	rootCmd.Flags().IntVarP(&LowerThreshold, "lower", "l", 10,
 		"Lower threshold for edge suppression")
+	rootCmd.Flags().IntVarP(&NonMaxSuppressionDistance, "distance", "d", 1,
+		"Interval for non-maximum suppression in pixels")
 }
