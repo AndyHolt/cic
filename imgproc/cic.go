@@ -138,49 +138,50 @@ func CreateImageGradients(x, y int) *ImageGradients {
 
 // Returns True if a pixel should be retained during non-max suppression, and
 // False if it should be discarded.
-func PixelNonmaxSuppression(ig *ImageGradients, x, y int) bool {
+func PixelNonmaxSuppression(ig *ImageGradients, x, y, distance int) bool {
 	var above, below image.Point
 
-	switch ig.Direction[y][x] {
-	case zero:
-		above.X = x + 1
-		above.Y = y
-		below.X = x - 1
-		below.Y = y
-	case fortyfive:
-		above.X = x + 1
-		above.Y = y + 1
-		below.X = x - 1
-		below.Y = y - 1
-	case ninety:
-		above.X = x
-		above.Y = y + 1
-		below.X = x
-		below.Y = y - 1
-	case onethreefive:
-		above.X = x - 1
-		above.Y = y + 1
-		below.X = x + 1
-		below.Y = y - 1
-	}
+	for d := 1; d <= distance; d++ {
+		switch ig.Direction[y][x] {
+		case zero:
+			above.X = x + d
+			above.Y = y
+			below.X = x - d
+			below.Y = y
+		case fortyfive:
+			above.X = x + d
+			above.Y = y + d
+			below.X = x - d
+			below.Y = y - d
+		case ninety:
+			above.X = x
+			above.Y = y + d
+			below.X = x
+			below.Y = y - d
+		case onethreefive:
+			above.X = x - d
+			above.Y = y + d
+			below.X = x + d
+			below.Y = y - d
+		}
 
-	if above.X >= 0 && above.X < ig.X && above.Y >= 0 && above.Y < ig.Y && ig.Value[above.Y][above.X] > ig.Value[y][x] {
-		return false
-	} else if below.X >= 0 && below.X < ig.X && below.Y >= 0 && below.Y < ig.Y && ig.Value[below.Y][below.X] > ig.Value[y][x] {
-		return false
-	} else {
-		return true
+		if above.X >= 0 && above.X < ig.X && above.Y >= 0 && above.Y < ig.Y && ig.Value[above.Y][above.X] > ig.Value[y][x] {
+			return false
+		} else if below.X >= 0 && below.X < ig.X && below.Y >= 0 && below.Y < ig.Y && ig.Value[below.Y][below.X] > ig.Value[y][x] {
+			return false
+		}
 	}
+	return true
 }
 
-func (ig *ImageGradients) NonmaxSuppression() *ImageGradients {
+func (ig *ImageGradients) NonmaxSuppression(distance int) *ImageGradients {
 	var pixelState [][]bool
 	pixelState = make([][]bool, ig.Y)
 
 	for j := 0; j < ig.Y; j++ {
 		pixelState[j] = make([]bool, ig.X)
 		for i := 0; i < ig.X; i++ {
-			pixelState[j][i] = PixelNonmaxSuppression(ig, i, j)
+			pixelState[j][i] = PixelNonmaxSuppression(ig, i, j, distance)
 		}
 	}
 
@@ -413,8 +414,14 @@ func SobelFilter(img *image.Gray) *ImageGradients {
 	return ig
 }
 
-func ConvertImageToColouring(filename string, outputFilename string,
-	sigma float64, upperThreshold, lowerThreshold int) {
+func ConvertImageToColouring(
+	filename string,
+	outputFilename string,
+	sigma float64,
+	upperThreshold int,
+	lowerThreshold int,
+	nonMaxSuppDist int,
+) {
 	fmt.Print("Reading in file...")
 
 	reader, err := os.Open(filename)
@@ -442,7 +449,7 @@ func ConvertImageToColouring(filename string, outputFilename string,
 	ig := SobelFilter(grayImg)
 	fmt.Print(" Done\n")
 	fmt.Print("Applying non-max suppression...")
-	ig = ig.NonmaxSuppression()
+	ig = ig.NonmaxSuppression(nonMaxSuppDist)
 	fmt.Print(" Done\n")
 	fmt.Print("Applying threshold suppression...")
 	// ig = ig.BasicThresholdSuppression()
@@ -477,5 +484,6 @@ func main() {
 		1.0,
 		100,
 		20,
+		1,
 	)
 }

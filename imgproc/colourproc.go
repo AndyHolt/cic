@@ -326,6 +326,7 @@ func RunSeparateColourImageProc() {
 	fmt.Print(" Done\n")
 }
 
+// [todo] -- add root app CLI options to colour processing
 func RunColourImageProc(filename string, outputFilename string) {
 	fmt.Print("Reading in file...")
 
@@ -357,7 +358,8 @@ func RunColourImageProc(filename string, outputFilename string) {
 	fmt.Print(" Done\n")
 
 	fmt.Print("Applying non-max suppression...")
-	ig = ig.NonmaxSuppression()
+	// [todo] - Replace function parameter with distance value
+	ig = ig.NonmaxSuppression(1)
 	fmt.Print(" Done\n")
 
 	fmt.Print("Applying threshold suppression...")
