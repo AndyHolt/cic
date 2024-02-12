@@ -344,13 +344,10 @@ func (ig *ImageGradients) LineFollowingThresholdSuppression(upperThreshold, lowe
 }
 
 func (ig *ImageGradients) GrayscaleImage() *image.Gray {
-	x := len(ig.Value[0])
-	y := len(ig.Value)
+	gray := image.NewGray(image.Rect(0, 0, ig.X, ig.Y))
 
-	gray := image.NewGray(image.Rect(0, 0, x, y))
-
-	for j := 0; j < y; j++ {
-		for i := 0; i < x; i++ {
+	for j := 0; j < ig.Y; j++ {
+		for i := 0; i < ig.X; i++ {
 			gray.SetGray(i, j, color.Gray{uint8(ig.Value[j][i])})
 		}
 	}
