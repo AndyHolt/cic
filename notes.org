@@ -44,7 +44,7 @@
     Effect seems not to be particularly good at full size, image quite noisy.
   - [ ] How about applying Gaussian filter for smoothing, then k-means? That
     could work?
-- [ ] Use more than one adjacent pixel in non-maximum suppression, in direction of
+- [X] Use more than one adjacent pixel in non-maximum suppression, in direction of
   edge, in order to avoid having multiple local maxima giving multiple edges.
 - [ ] Try using alternative edge detection methods, such as Frei-Chan (see
   [[https://www.rastergrid.com/blog/2011/01/frei-chen-edge-detector/][Frei-Chen]]), Kovalevsky (good for similar-intensity-but-different-colour edges)
