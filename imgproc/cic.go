@@ -366,6 +366,42 @@ func InvertGrayscaleImage(img *image.Gray) *image.Gray {
 	return img
 }
 
+func ThickenLineAtPixel(img *image.Gray, x, y, thickness int, col color.Gray) {
+	for j := -thickness / 2; j <= thickness / 2; j++ {
+		for i := -thickness / 2; i <= thickness / 2; i++ {
+			if img.GrayAt(x + i, y + j).Y > col.Y {
+				img.SetGray(x + i, y + j, col)
+			}
+		}
+	}
+}
+
+func ThickenLinesByDarkness(
+	src *image.Gray,
+	thickerThreshold uint8,
+	thinnerThreshold uint8,
+) *image.Gray {
+	bounds := src.Bounds()
+
+	thickEdge := 5
+	thinEdge := 3
+
+	dst := image.NewGray(bounds)
+	draw.Draw(dst, bounds, src, bounds.Min, draw.Src)
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if src.GrayAt(x, y).Y <= thickerThreshold {
+				ThickenLineAtPixel(dst, x, y, thickEdge, src.GrayAt(x, y))
+			} else if src.GrayAt(x, y).Y <= thinnerThreshold {
+				ThickenLineAtPixel(dst, x, y, thinEdge, src.GrayAt(x, y))
+			}
+		}
+	}
+
+	return dst
+}
+
 func SobelFilter(img *image.Gray) *ImageGradients {
 	imgSize := img.Bounds().Size()
 
@@ -418,6 +454,8 @@ func ConvertImageToColouring(
 	upperThreshold int,
 	lowerThreshold int,
 	nonMaxSuppDist int,
+	thickerThreshold int,
+	thinnerThreshold int,
 ) {
 	fmt.Print("Reading in file...")
 
@@ -459,6 +497,19 @@ func ConvertImageToColouring(
 	grayImg = InvertGrayscaleImage(grayImg)
 	fmt.Print(" Done\n")
 
+	fmt.Print("Thickening lines based on threshold values:\n")
+	fmt.Printf(
+		"Thicker threshold level: %v\nThinner threshold level: %v\n",
+		thickerThreshold,
+		thinnerThreshold,
+	)
+	grayImg = ThickenLinesByDarkness(
+		grayImg,
+		uint8(thickerThreshold),
+		uint8(thinnerThreshold),
+	)
+	fmt.Print("Done\n")
+
 	fmt.Printf("Saving to output file, \"%v\"...", outputFilename)
 	outputFile, err := os.Create(outputFilename)
 	if err != nil {
@@ -482,5 +533,7 @@ func main() {
 		100,
 		20,
 		1,
+		50,
+		150,
 	)
 }
