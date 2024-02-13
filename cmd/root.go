@@ -15,6 +15,8 @@ var StdDev float64
 var UpperThreshold int
 var LowerThreshold int
 var NonMaxSuppressionDistance int
+var ThickerThreshold int
+var ThinnerThreshold int
 
 // upper (u) and lower (l) for setting threshold values
 // no-blur option
@@ -36,6 +38,8 @@ into a colouring sheet.`,
 			UpperThreshold,
 			LowerThreshold,
 			NonMaxSuppressionDistance,
+			ThickerThreshold,
+			ThinnerThreshold,
 		)
 	},
 }
@@ -68,4 +72,8 @@ func init() {
 		"Lower threshold for edge suppression")
 	rootCmd.Flags().IntVarP(&NonMaxSuppressionDistance, "distance", "d", 1,
 		"Interval for non-maximum suppression in pixels")
+	rootCmd.Flags().IntVarP(&ThickerThreshold, "thicker", "t", 50,
+		"Gray value threshold for thicker lines")
+	rootCmd.Flags().IntVarP(&ThinnerThreshold, "thinner", "i", 150,
+		"Gray value threshold for thinner lines")
 }

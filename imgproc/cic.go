@@ -454,6 +454,8 @@ func ConvertImageToColouring(
 	upperThreshold int,
 	lowerThreshold int,
 	nonMaxSuppDist int,
+	thickerThreshold int,
+	thinnerThreshold int,
 ) {
 	fmt.Print("Reading in file...")
 
@@ -496,17 +498,17 @@ func ConvertImageToColouring(
 	fmt.Print(" Done\n")
 
 	fmt.Print("Thickening lines based on threshold values:\n")
-	thickerThreshold := uint8(50)
-	thinnerThreshold := uint8(150)
-	fmt.Printf("Thicker threshold level: %v\nThinner threshold level: %v\n",
-		thickerThreshold, thinnerThreshold)
-	grayImg = ThickenLinesByDarkness(
-		grayImg,
+	fmt.Printf(
+		"Thicker threshold level: %v\nThinner threshold level: %v\n",
 		thickerThreshold,
 		thinnerThreshold,
 	)
+	grayImg = ThickenLinesByDarkness(
+		grayImg,
+		uint8(thickerThreshold),
+		uint8(thinnerThreshold),
+	)
 	fmt.Print("Done\n")
-
 
 	fmt.Printf("Saving to output file, \"%v\"...", outputFilename)
 	outputFile, err := os.Create(outputFilename)
@@ -531,5 +533,7 @@ func main() {
 		100,
 		20,
 		1,
+		50,
+		150,
 	)
 }
