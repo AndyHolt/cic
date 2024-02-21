@@ -48,6 +48,31 @@ func (kmc *KMeansClusters) RandomiseMeans() {
 	}
 }
 
+func (kmc *KMeansClusters) PartlyRandomiseMeans() {
+	setMeans := 0
+
+	if kmc.K >= 3 {
+		kmc.Means[0] = Mean{uint8(200 + rand.Intn(56)), 0, 0}
+		kmc.Means[1] = Mean{0, uint8(200 + rand.Intn(56)), 0}
+		kmc.Means[2] = Mean{0, 0, uint8(200 + rand.Intn(56))}
+
+		setMeans += 3
+	}
+
+	if kmc.K >= 5 {
+		kmc.Means[3] = Mean{0, 0, 0}
+		kmc.Means[4] = Mean{255, 255, 255}
+
+		setMeans += 2
+	}
+
+	for i := setMeans; i < kmc.K; i++ {
+		kmc.Means[i].R = uint8(rand.Intn(256))
+		kmc.Means[i].G = uint8(rand.Intn(256))
+		kmc.Means[i].B = uint8(rand.Intn(256))
+	}
+}
+
 func (kmc *KMeansClusters) DistToMean(meanIdx int, px color.RGBA) float64 {
 	return math.Sqrt(
 		math.Pow(float64(px.R-kmc.Means[meanIdx].R), 2) +
