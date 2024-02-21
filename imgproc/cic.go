@@ -367,10 +367,10 @@ func InvertGrayscaleImage(img *image.Gray) *image.Gray {
 }
 
 func ThickenLineAtPixel(img *image.Gray, x, y, thickness int, col color.Gray) {
-	for j := -thickness / 2; j <= thickness / 2; j++ {
-		for i := -thickness / 2; i <= thickness / 2; i++ {
-			if img.GrayAt(x + i, y + j).Y > col.Y {
-				img.SetGray(x + i, y + j, col)
+	for j := -thickness / 2; j <= thickness/2; j++ {
+		for i := -thickness / 2; i <= thickness/2; i++ {
+			if img.GrayAt(x+i, y+j).Y > col.Y {
+				img.SetGray(x+i, y+j, col)
 			}
 		}
 	}
