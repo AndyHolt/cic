@@ -106,6 +106,11 @@ func (kmc *KMeansClusters) AssignClusters(img *image.RGBA) {
 			kmc.CostVal += math.Pow(bestMeanDist, 2)
 		}
 	}
+
+	// Normalise cost function by dividing by number of pixels in image
+	pixels := float64((img.Bounds().Max.Y - img.Bounds().Min.Y) * (img.Bounds().Max.X - img.Bounds().Min.X))
+
+	kmc.CostVal /= pixels
 }
 
 func (kmc *KMeansClusters) CalculateMeans(img *image.RGBA) {
