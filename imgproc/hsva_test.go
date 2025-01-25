@@ -97,10 +97,16 @@ func TestHSVA2RGBA(t *testing.T) {
 	}
 }
 
+func TestRGBA2HSVA(t *testing.T) {
+	// t.Parallel()
+	for name, c := range colors {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			h, s, v, a := ConvertRGBA2HSVA(c.rgba)
+			hsva := HSVA{uint16(h), uint8(s), uint8(v), uint8(a)}
+			if c.hsva != hsva {
+				t.Fatalf("Conversion of colour %v from RGBA to HSVA failed. Expected %v, got %v\n", name, c.hsva, hsva)
+			}
+		})
 	}
-}
-
-
-func ConvertRGBA2HSVA(t *testing.T) {
-	t.Fatalf("Not yet implemented")
 }
